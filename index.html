@@ -20,6 +20,8 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- ===== 今日（ホーム）の画面 ===== -->
+  <div class="view" id="view-home">
   <!-- 森の入口のヘッダー -->
   <header class="forest">
     <img src="images/header.jpg" alt="木漏れ日の森の中にある、緑の扉の小さな図書館">
@@ -68,10 +70,11 @@
       </div>
       <p class="hint">「面白そう」と思った瞬間を、ここに残しておきましょう。</p>
       <label for="seed-input">気になった本のタイトル</label>
-      <div class="seed-row">
-        <input id="seed-input" type="text" placeholder="例：はてしない物語" autocomplete="off">
-        <button type="button" id="seed-button">迎える</button>
-      </div>
+      <form class="seed-row" id="seed-form">
+        <input id="seed-input" type="text" placeholder="例：はてしない物語" autocomplete="off" enterkeyhint="done">
+        <button type="submit" id="seed-button">迎える</button>
+      </form>
+      <p class="seed-for" id="seed-for"></p>
     </section>
 
     <!-- 本の数 -->
@@ -88,14 +91,32 @@
       <img src="images/tree.png" alt="">
     </a>
   </main>
+  </div>
+
+  <!-- ===== 本のたねの画面 ===== -->
+  <div class="view" id="view-tane" hidden>
+    <header class="page-head">
+      <img src="images/sprout.png" alt="">
+      <h1>本のたね</h1>
+    </header>
+    <main>
+      <p class="page-lead">いつか読んでみたい本たち。未来の出会いの芽を、ここで育てています。</p>
+      <p class="page-who" id="tane-who"></p>
+      <ul class="seed-list" id="seed-list"></ul>
+      <div class="empty" id="seed-empty">
+        <img src="images/sprout.png" alt="">
+        <p>まだ本のたねはありません。<br>「今日」の画面から、気になった本を迎えてみましょう。</p>
+      </div>
+    </main>
+  </div>
 
   <!-- 下のメニュー -->
   <nav class="tabs" aria-label="メインメニュー">
-    <a href="#home" class="tab active" aria-current="page">
+    <a href="#home" class="tab" data-view="home">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
       今日
     </a>
-    <a href="#tane" class="tab" data-soon="本のたね">
+    <a href="#tane" class="tab" data-view="tane">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9"/><path d="M12 12c0-4-3-6-7-6 0 4 3 6 7 6z"/><path d="M12 12c0-4 3-6 7-6 0 4-3 6-7 6z"/></svg>
       本のたね
     </a>
