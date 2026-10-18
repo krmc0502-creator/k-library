@@ -19,9 +19,12 @@ body {
   color: var(--ink);
   font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", sans-serif;
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* 森の入口のヘッダー */
+button, input { font-family: inherit; }
+
+/* ---------- 森の入口のヘッダー ---------- */
 .forest {
   position: relative;
 }
@@ -37,7 +40,7 @@ body {
 .greeting {
   position: absolute;
   left: 20px;
-  bottom: 28px;
+  bottom: 34px;
   max-width: 300px;
   padding: 12px 16px;
   border-radius: 16px;
@@ -57,70 +60,340 @@ body {
   color: var(--ink-soft);
 }
 
-/* ヘッダーの下の部分 */
+/* ---------- だれの本？ ---------- */
+.family {
+  position: relative;
+  max-width: 528px;
+  margin: -16px auto 0;
+  margin-inline: max(16px, calc((100% - 528px) / 2));
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.family-label {
+  flex-grow: 1;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.member {
+  min-width: 50px;
+  padding: 0;
+  border: none;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid transparent;
+  outline: 1px solid var(--line);
+}
+
+.avatar-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--leaf);
+  background: var(--leaf-light);
+}
+
+.member-name { font-size: 11px; }
+
+.member.selected .avatar { border-color: var(--leaf); outline: none; }
+.member.selected .member-name { color: var(--leaf); font-weight: 700; }
+
+/* ---------- ヘッダーの下の部分 ---------- */
 main {
   max-width: 560px;
   margin: 0 auto;
-  padding: 22px 16px calc(40px + env(safe-area-inset-bottom));
+  padding: 22px 16px calc(110px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 22px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .card {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 18px;
+  padding: 16px;
 }
 
-.card h1,
-.card h2 {
-  margin: 0 0 8px;
-  font-size: 17px;
-  font-weight: 700;
+/* ---------- 今日の出会い ---------- */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.card p {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.8;
+.note {
+  font-size: 12px;
   color: var(--ink-soft);
 }
 
-.soon ul {
+.books {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.book {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reason {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.cover {
+  position: relative;
+  height: 190px;
+  padding: 16px 10px;
+  border-radius: 5px 10px 10px 5px;
+  box-shadow: inset 6px 0 0 rgba(0, 0, 0, 0.12);
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.mark {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  object-fit: contain;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.title {
   margin: 0;
-  padding: 0;
-  list-style: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.author {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* ---------- 本のたねを迎える ---------- */
+.seed {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.soon li {
+.seed-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 14px;
+  gap: 8px;
+}
+
+.seed-head img { width: 28px; height: 22px; object-fit: contain; }
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
   color: var(--ink-soft);
 }
 
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--leaf-light);
-  border: 2px solid var(--leaf);
-  flex-shrink: 0;
+.seed label {
+  font-size: 12px;
+  color: var(--ink-soft);
 }
 
-/* ふわっと現れる動き */
-.greeting,
-.card {
+.seed-row {
+  display: flex;
+  gap: 8px;
+}
+
+.seed-row input {
+  flex-grow: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  font-size: 16px; /* 16px以上にするとiPhoneで画面が勝手に拡大されない */
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #D8D0BD;
+  border-radius: 12px;
+}
+
+.seed-row button {
+  height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: var(--leaf);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- 本の数 ---------- */
+.counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.count {
+  padding: 10px 4px;
+  text-align: center;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.count p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.count .num {
+  margin-top: 4px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.count small { font-size: 11px; font-weight: 500; }
+
+/* ---------- 本の森への入口 ---------- */
+.to-forest {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 16px;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.to-forest img { width: 46px; height: 45px; border-radius: 50%; }
+
+/* ---------- 下のメニュー ---------- */
+.tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: rgba(251, 250, 244, 0.96);
+  border-top: 1px solid var(--line);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 0;
+  text-decoration: none;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.tab svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tab.active {
+  color: var(--leaf);
+  font-weight: 700;
+}
+
+/* ---------- ちいさなお知らせ ---------- */
+.toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  width: fit-content;
+  margin: 0 auto;
+  padding: 10px 16px;
+  border-radius: 16px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- ふわっと現れる動き ---------- */
+.greeting, .family, .book, .card, .counts {
   animation: fade-in 0.8s ease both;
 }
 
-.card:nth-of-type(2) { animation-delay: 0.15s; }
+.book:nth-child(2) { animation-delay: 0.08s; }
+.book:nth-child(3) { animation-delay: 0.16s; }
+.book:nth-child(4) { animation-delay: 0.24s; }
 
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(6px); }
@@ -128,5 +401,5 @@ main {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .greeting, .card { animation: none; }
+  .greeting, .family, .book, .card, .counts { animation: none; }
 }

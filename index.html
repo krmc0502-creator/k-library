@@ -29,21 +29,88 @@
     </div>
   </header>
 
+  <!-- だれの本？（家族の切り替え） -->
+  <section class="family" aria-label="だれの本">
+    <span class="family-label">だれの本？</span>
+    <button type="button" class="member" data-member="all">
+      <span class="avatar avatar-all">みんな</span>
+      <span class="member-name">家族</span>
+    </button>
+    <button type="button" class="member" data-member="mama">
+      <img class="avatar" src="images/tanuki.png" alt="">
+      <span class="member-name">ママ</span>
+    </button>
+    <button type="button" class="member" data-member="aoi">
+      <img class="avatar" src="images/usagi.png" alt="">
+      <span class="member-name">あおい</span>
+    </button>
+    <button type="button" class="member" data-member="yuto">
+      <img class="avatar" src="images/risu.png" alt="">
+      <span class="member-name">ゆうと</span>
+    </button>
+  </section>
+
   <main>
-    <section class="card welcome">
-      <h1>K.Libraryへようこそ</h1>
-      <p>本との出会いを、大切に残す場所です。<br>これから少しずつ、本の森を育てていきます。</p>
+    <!-- 今日の出会い -->
+    <section class="today" aria-labelledby="today-title">
+      <div class="section-head">
+        <h2 id="today-title">今日の出会い</h2>
+        <span class="note">いまは見本の本です</span>
+      </div>
+      <div class="books" id="books"></div>
     </section>
 
-    <section class="card soon">
-      <h2>もうすぐ、ここに</h2>
-      <ul>
-        <li><span class="dot"></span>今日の出会い（毎朝4冊）</li>
-        <li><span class="dot"></span>本のたねを迎える</li>
-        <li><span class="dot"></span>思い出の本棚（本の森）</li>
-      </ul>
+    <!-- 本のたねを迎える -->
+    <section class="card seed" aria-labelledby="seed-title">
+      <div class="seed-head">
+        <img src="images/sprout.png" alt="">
+        <h2 id="seed-title">本のたねを迎える</h2>
+      </div>
+      <p class="hint">「面白そう」と思った瞬間を、ここに残しておきましょう。</p>
+      <label for="seed-input">気になった本のタイトル</label>
+      <div class="seed-row">
+        <input id="seed-input" type="text" placeholder="例：はてしない物語" autocomplete="off">
+        <button type="button" id="seed-button">迎える</button>
+      </div>
     </section>
+
+    <!-- 本の数 -->
+    <section class="counts" aria-label="本の数">
+      <div class="count"><p>本のたね</p><p class="num"><span id="count-seed">0</span><small> 冊</small></p></div>
+      <div class="count"><p>予約中</p><p class="num"><span id="count-reserved">0</span><small> 冊</small></p></div>
+      <div class="count"><p>貸出中</p><p class="num"><span id="count-borrowed">0</span><small> 冊</small></p></div>
+      <div class="count"><p>出会った本</p><p class="num"><span id="count-met">0</span><small> 冊</small></p></div>
+    </section>
+
+    <!-- 本の森への入口 -->
+    <a class="to-forest" href="#mori" data-soon="本の森">
+      <span>本の森へ</span>
+      <img src="images/tree.png" alt="">
+    </a>
   </main>
+
+  <!-- 下のメニュー -->
+  <nav class="tabs" aria-label="メインメニュー">
+    <a href="#home" class="tab active" aria-current="page">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+      今日
+    </a>
+    <a href="#tane" class="tab" data-soon="本のたね">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9"/><path d="M12 12c0-4-3-6-7-6 0 4 3 6 7 6z"/><path d="M12 12c0-4 3-6 7-6 0 4-3 6-7 6z"/></svg>
+      本のたね
+    </a>
+    <a href="#mori" class="tab" data-soon="本の森">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22v-6"/><path d="M12 2l6 9h-3l4 5H5l4-5H6z"/></svg>
+      本の森
+    </a>
+    <a href="#sagasu" class="tab" data-soon="さがす">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      さがす
+    </a>
+  </nav>
+
+  <!-- ちいさなお知らせ -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="app.js"></script>
 </body>

@@ -1,6 +1,6 @@
 // 電波がないときも K.Library を開けるように、画面の部品をiPhoneにしまっておく係
 // 画面を変更したら、下の数字を1つ増やすと新しい画面に入れかわります
-const VERSION = "k-library-v1";
+const VERSION = "k-library-v2";
 
 const FILES = [
   "./",
@@ -11,6 +11,12 @@ const FILES = [
   "images/header.jpg",
   "images/apple-touch-icon.png",
   "images/icon-192.png",
+  "images/tanuki.png",
+  "images/usagi.png",
+  "images/risu.png",
+  "images/star.png",
+  "images/sprout.png",
+  "images/tree.png",
 ];
 
 self.addEventListener("install", (event) => {
