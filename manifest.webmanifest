@@ -1,0 +1,14 @@
+{
+  "name": "K.Library",
+  "short_name": "K.Library",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F3F1E8",
+  "theme_color": "#F3F1E8",
+  "lang": "ja",
+  "icons": [
+    { "src": "images/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "images/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
