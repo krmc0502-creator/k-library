@@ -409,7 +409,14 @@ h2 {
   gap: 10px;
 }
 
+.seed-list li { animation: fade-in 0.5s ease both; }
+
 .seed-item {
+  width: 100%;
+  font-size: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -417,7 +424,6 @@ h2 {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 16px;
-  animation: fade-in 0.5s ease both;
 }
 
 .mini-cover {
@@ -499,6 +505,191 @@ h2 {
   cursor: pointer;
 }
 
+/* ---------- 本の数（押すと一覧へ） ---------- */
+a.count { display: block; text-decoration: none; }
+
+/* ---------- 状態の切りかえ（一覧の上のボタン） ---------- */
+.chips {
+  max-width: 560px;
+  margin: 14px auto 0;
+  padding: 0 16px 2px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chips::-webkit-scrollbar { display: none; }
+
+.chip {
+  flex-shrink: 0;
+  padding: 7px 13px;
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.chip.selected {
+  color: #fff;
+  font-weight: 700;
+  background: var(--leaf);
+  border-color: var(--leaf);
+}
+
+.item-star { width: 24px; height: 24px; flex-shrink: 0; object-fit: contain; }
+
+.item-arrow {
+  flex-shrink: 0;
+  font-size: 22px;
+  color: #B5AA94;
+}
+
+/* ---------- 本のくわしい画面（下から出てくる） ---------- */
+.sheet-back {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(67, 56, 46, 0.35);
+  animation: fade 0.2s ease both;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 21;
+  max-width: 560px;
+  max-height: 88vh;
+  margin: 0 auto;
+  overflow-y: auto;
+  padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+  background: var(--ground);
+  border-radius: 22px 22px 0 0;
+  animation: slide-up 0.28s ease both;
+}
+
+.sheet-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sheet-text { flex-grow: 1; min-width: 0; }
+
+.sheet-text h2 { font-size: 17px; overflow-wrap: anywhere; }
+
+.sheet-date {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.star-toggle {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  font-size: 10px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.star-toggle img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  filter: grayscale(1);
+  opacity: 0.45;
+  transition: filter 0.2s, opacity 0.2s, transform 0.2s;
+}
+
+.star-toggle.on { color: #8A6A16; border-color: #E8D49A; background: #FBF3DA; }
+.star-toggle.on img { filter: none; opacity: 1; transform: scale(1.1); }
+
+.sheet-label {
+  margin: 20px 0 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.choice-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.choice {
+  min-height: 44px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.choice img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+
+.choice-row .choice { flex-direction: column; gap: 3px; font-size: 12px; }
+
+.choice.selected {
+  color: var(--leaf);
+  font-weight: 700;
+  background: var(--leaf-light);
+  border-color: var(--leaf);
+}
+
+.sheet-foot {
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.close {
+  height: 44px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 12px;
+  background: var(--leaf);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sheet-foot .remove { height: 44px; }
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: none; }
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 /* ---------- ちいさなお知らせ ---------- */
 .toast {
   position: fixed;
@@ -517,7 +708,7 @@ h2 {
   opacity: 0;
   transform: translateY(10px);
   pointer-events: none;
-  z-index: 10;
+  z-index: 30;
   transition: opacity 0.25s, transform 0.25s;
 }
 
@@ -542,5 +733,15 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .greeting, .family, .book, .card, .counts { animation: none; }
+  .greeting, .family, .book, .card, .counts, .seed-list li, .sheet, .sheet-back { animation: none; }
+}
+
+/* 星や芽の絵のうしろの白っぽい四角を、背景になじませる */
+.item-star, .star-toggle img, .page-head img { mix-blend-mode: multiply; }
+.item-star, .star-toggle img { border-radius: 50%; }
+
+/* くわしい画面を開いているときは、お知らせを上に出す */
+body.sheet-open .toast {
+  top: calc(16px + env(safe-area-inset-top));
+  bottom: auto;
 }

@@ -177,6 +177,32 @@ const people = {
   yuto: { name: "ゆうと", icon: "images/risu.png" },
 };
 
+// ---------- 本の状態 ----------
+// hash: 画面のアドレスの「#」のあと
+
+const statuses = {
+  seed: { name: "本のたね", hash: "tane", icon: "images/sprout.png",
+    lead: "いつか読んでみたい本たち。未来の出会いの芽を、ここで育てています。",
+    empty: "まだ本のたねはありません。<br>「今日」の画面から、気になった本を迎えてみましょう。" },
+  reserved: { name: "予約中", hash: "yoyaku", icon: "images/sprout.png",
+    lead: "図書館で予約している本。届く日を楽しみに待ちましょう。",
+    empty: "予約中の本はありません。<br>本のたねを開いて「予約中」にすると、ここに並びます。" },
+  borrowed: { name: "貸出中", hash: "kashidashi", icon: "images/tree.png",
+    lead: "いま図書館から借りている本。読めるところまで、気楽にどうぞ。",
+    empty: "借りている本はありません。" },
+  met: { name: "出会った本", hash: "deai", icon: "images/star.png",
+    lead: "ページを開いて出会えた本たち。最後まで読んでいなくても、立派な出会いです。",
+    empty: "出会った本はまだありません。<br>少しでも開いた本は、ここに残しておきましょう。" },
+  home: { name: "家に迎えた本", hash: "ie", icon: "images/tree.png",
+    lead: "買ったり、もらったりして、家にいる本たち。",
+    empty: "家に迎えた本はまだありません。" },
+};
+
+function statusFromHash() {
+  const hash = location.hash.slice(1);
+  return Object.keys(statuses).find((key) => statuses[key].hash === hash) || null;
+}
+
 let currentMember = loadSetting("k-library-member", "all");
 if (!people[currentMember]) currentMember = "all";
 
@@ -233,7 +259,7 @@ document.getElementById("seed-form").addEventListener("submit", (event) => {
   showToast(`『${title}』を本のたねとして迎えました`);
 });
 
-// ---------- 本のたねを外す（すぐに「もとに戻す」もできる） ----------
+// ---------- 本を外す（すぐに「もとに戻す」もできる） ----------
 
 function removeBook(id) {
   const index = books.findIndex((book) => book.id === id);
@@ -250,6 +276,116 @@ function removeBook(id) {
     },
   });
 }
+
+// ---------- 本のくわしい画面（状態・だれの本・星を変える） ----------
+
+let openBookId = null;
+
+function findBook(id) {
+  return books.find((book) => book.id === id);
+}
+
+// 1冊の中身を変えて保存する。うまくいかなければ元に戻す
+function changeBook(id, changes) {
+  const book = findBook(id);
+  if (!book) return null;
+  const before = { ...book };
+  Object.assign(book, changes);
+  if (!saveBooks()) {
+    Object.assign(book, before);
+    return null;
+  }
+  render();
+  renderSheet();
+  return before;
+}
+
+function choiceButton(label, selected, onClick, icon) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "choice";
+  button.classList.toggle("selected", selected);
+  button.setAttribute("aria-pressed", String(selected));
+  if (icon) {
+    const img = document.createElement("img");
+    img.src = icon;
+    img.alt = "";
+    button.appendChild(img);
+  }
+  button.append(label);
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function renderSheet() {
+  const book = findBook(openBookId);
+  if (!book) return;
+  document.getElementById("sheet-cover").style.background = colorFor(book.title);
+  document.getElementById("sheet-title").textContent = book.title;
+  document.getElementById("sheet-date").textContent = `${formatDate(book.addedAt)}に迎えた本`;
+
+  const star = document.getElementById("sheet-star");
+  star.classList.toggle("on", !!book.favorite);
+  star.setAttribute("aria-pressed", String(!!book.favorite));
+
+  const statusArea = document.getElementById("sheet-status");
+  statusArea.innerHTML = "";
+  for (const [key, info] of Object.entries(statuses)) {
+    statusArea.appendChild(choiceButton(info.name, book.status === key, () => {
+      if (book.status === key) return;
+      const before = changeBook(book.id, { status: key });
+      if (!before) return;
+      showToast(`「${info.name}」にしました`, {
+        label: "もとに戻す",
+        run: () => changeBook(book.id, { status: before.status }),
+      });
+    }));
+  }
+
+  const memberArea = document.getElementById("sheet-member");
+  memberArea.innerHTML = "";
+  for (const [key, who] of Object.entries(people)) {
+    memberArea.appendChild(choiceButton(who.name, book.member === key, () => {
+      if (book.member !== key) changeBook(book.id, { member: key });
+    }, who.icon));
+  }
+}
+
+function openSheet(id) {
+  openBookId = id;
+  renderSheet();
+  document.getElementById("sheet-back").hidden = false;
+  document.getElementById("sheet").hidden = false;
+  document.body.classList.add("sheet-open");
+}
+
+function closeSheet() {
+  openBookId = null;
+  document.getElementById("sheet-back").hidden = true;
+  document.getElementById("sheet").hidden = true;
+  document.body.classList.remove("sheet-open");
+}
+
+document.getElementById("sheet-close").addEventListener("click", closeSheet);
+document.getElementById("sheet-back").addEventListener("click", closeSheet);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && openBookId) closeSheet();
+});
+
+document.getElementById("sheet-star").addEventListener("click", () => {
+  const book = findBook(openBookId);
+  if (!book) return;
+  const on = !book.favorite;
+  if (changeBook(book.id, { favorite: on })) {
+    showToast(on ? "お気に入りの星をつけました" : "星をはずしました");
+  }
+});
+
+document.getElementById("sheet-remove").addEventListener("click", () => {
+  const id = openBookId;
+  closeSheet();
+  removeBook(id);
+});
 
 // ---------- 画面に表示する ----------
 
@@ -282,18 +418,48 @@ function renderSeedFor() {
     currentMember === "all" ? "家族の本のたねとして迎えます" : `${who.name}の本のたねとして迎えます`;
 }
 
+let currentStatus = "seed";
+
+function renderChips() {
+  const area = document.getElementById("chips");
+  area.innerHTML = "";
+  const list = visibleBooks();
+  for (const [key, info] of Object.entries(statuses)) {
+    const chip = document.createElement("a");
+    chip.className = "chip";
+    chip.href = `#${info.hash}`;
+    const n = list.filter((book) => book.status === key).length;
+    chip.textContent = `${info.name} ${n}`;
+    if (key === currentStatus) {
+      chip.classList.add("selected");
+      chip.setAttribute("aria-current", "page");
+    }
+    area.appendChild(chip);
+  }
+}
+
 function renderSeedList() {
-  const seeds = visibleBooks().filter((book) => book.status === "seed");
+  const info = statuses[currentStatus];
+  const shown = visibleBooks().filter((book) => book.status === currentStatus);
   const list = document.getElementById("seed-list");
   list.innerHTML = "";
 
+  document.getElementById("list-title").textContent = info.name;
+  document.getElementById("list-icon").src = info.icon;
+  document.getElementById("list-lead").textContent = info.lead;
+  document.getElementById("empty-text").innerHTML = info.empty;
   document.getElementById("tane-who").textContent =
-    currentMember === "all" ? `家族みんなの本のたね　${seeds.length}冊` : `${people[currentMember].name}の本のたね　${seeds.length}冊`;
-  document.getElementById("seed-empty").hidden = seeds.length > 0;
+    (currentMember === "all" ? "家族みんなの" : `${people[currentMember].name}の`) + `${info.name}　${shown.length}冊`;
+  document.getElementById("seed-empty").hidden = shown.length > 0;
+  renderChips();
 
-  for (const book of seeds) {
+  for (const book of shown) {
     const item = document.createElement("li");
-    item.className = "seed-item";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "seed-item";
+    button.setAttribute("aria-label", `『${book.title}』を開く`);
+    button.addEventListener("click", () => openSheet(book.id));
 
     const cover = document.createElement("div");
     cover.className = "mini-cover";
@@ -315,15 +481,23 @@ function renderSeedList() {
     }
     meta.append(`${who.name}・${formatDate(book.addedAt)}に迎えた`);
     text.append(title, meta);
+    button.append(cover, text);
 
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "remove";
-    remove.textContent = "外す";
-    remove.setAttribute("aria-label", `『${book.title}』を外す`);
-    remove.addEventListener("click", () => removeBook(book.id));
+    if (book.favorite) {
+      const star = document.createElement("img");
+      star.className = "item-star";
+      star.src = "images/star.png";
+      star.alt = "お気に入り";
+      button.appendChild(star);
+    }
 
-    item.append(cover, text, remove);
+    const arrow = document.createElement("span");
+    arrow.className = "item-arrow";
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.textContent = "›";
+    button.appendChild(arrow);
+
+    item.appendChild(button);
     list.appendChild(item);
   }
 }
@@ -334,10 +508,16 @@ function render() {
   renderSeedList();
 }
 
-// ---------- 画面の切りかえ（今日 / 本のたね） ----------
+// ---------- 画面の切りかえ（今日 / 本の一覧） ----------
 
 function showView() {
-  const name = location.hash === "#tane" ? "tane" : "home";
+  const status = statusFromHash();
+  const name = status ? "tane" : "home";
+  if (status) {
+    currentStatus = status;
+    renderSeedList();
+  }
+  closeSheet();
   document.getElementById("view-home").hidden = name !== "home";
   document.getElementById("view-tane").hidden = name !== "tane";
   document.querySelectorAll(".tab[data-view]").forEach((tab) => {

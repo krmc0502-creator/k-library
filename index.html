@@ -79,10 +79,10 @@
 
     <!-- 本の数 -->
     <section class="counts" aria-label="本の数">
-      <div class="count"><p>本のたね</p><p class="num"><span id="count-seed">0</span><small> 冊</small></p></div>
-      <div class="count"><p>予約中</p><p class="num"><span id="count-reserved">0</span><small> 冊</small></p></div>
-      <div class="count"><p>貸出中</p><p class="num"><span id="count-borrowed">0</span><small> 冊</small></p></div>
-      <div class="count"><p>出会った本</p><p class="num"><span id="count-met">0</span><small> 冊</small></p></div>
+      <a class="count" href="#tane"><p>本のたね</p><p class="num"><span id="count-seed">0</span><small> 冊</small></p></a>
+      <a class="count" href="#yoyaku"><p>予約中</p><p class="num"><span id="count-reserved">0</span><small> 冊</small></p></a>
+      <a class="count" href="#kashidashi"><p>貸出中</p><p class="num"><span id="count-borrowed">0</span><small> 冊</small></p></a>
+      <a class="count" href="#deai"><p>出会った本</p><p class="num"><span id="count-met">0</span><small> 冊</small></p></a>
     </section>
 
     <!-- 本の森への入口 -->
@@ -93,22 +93,50 @@
   </main>
   </div>
 
-  <!-- ===== 本のたねの画面 ===== -->
+  <!-- ===== 本の一覧の画面（本のたね・予約中・貸出中・出会った本・家に迎えた本） ===== -->
   <div class="view" id="view-tane" hidden>
     <header class="page-head">
-      <img src="images/sprout.png" alt="">
-      <h1>本のたね</h1>
+      <img src="images/sprout.png" alt="" id="list-icon">
+      <h1 id="list-title">本のたね</h1>
     </header>
+    <nav class="chips" id="chips" aria-label="本の状態"></nav>
     <main>
-      <p class="page-lead">いつか読んでみたい本たち。未来の出会いの芽を、ここで育てています。</p>
+      <p class="page-lead" id="list-lead"></p>
       <p class="page-who" id="tane-who"></p>
       <ul class="seed-list" id="seed-list"></ul>
       <div class="empty" id="seed-empty">
         <img src="images/sprout.png" alt="">
-        <p>まだ本のたねはありません。<br>「今日」の画面から、気になった本を迎えてみましょう。</p>
+        <p id="empty-text"></p>
       </div>
     </main>
   </div>
+
+  <!-- ===== 本のくわしい画面（下から出てくる） ===== -->
+  <div class="sheet-back" id="sheet-back" hidden></div>
+  <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden>
+    <div class="sheet-top">
+      <div class="mini-cover" id="sheet-cover"></div>
+      <div class="sheet-text">
+        <h2 id="sheet-title"></h2>
+        <p class="sheet-date" id="sheet-date"></p>
+      </div>
+      <button type="button" class="star-toggle" id="sheet-star" aria-pressed="false">
+        <img src="images/star.png" alt="">
+        <span>お気に入り</span>
+      </button>
+    </div>
+
+    <p class="sheet-label">いまの状態</p>
+    <div class="choice-grid" id="sheet-status"></div>
+
+    <p class="sheet-label">だれの本？</p>
+    <div class="choice-row" id="sheet-member"></div>
+
+    <div class="sheet-foot">
+      <button type="button" class="remove" id="sheet-remove">この本を外す</button>
+      <button type="button" class="close" id="sheet-close">とじる</button>
+    </div>
+  </section>
 
   <!-- 下のメニュー -->
   <nav class="tabs" aria-label="メインメニュー">
