@@ -604,18 +604,88 @@ function renderSeedList() {
   }
 }
 
+// ---------- 本の森（木の本棚） ----------
+
+let moriFilter = "all";
+const SHELF_COLUMNS = 3;
+
+function renderMori() {
+  const all = visibleBooks().filter((book) => book.status === "met" || book.status === "home");
+  const shown = moriFilter === "star" ? all.filter((book) => book.favorite) : all;
+  const shelf = document.getElementById("shelf");
+  shelf.innerHTML = "";
+
+  document.getElementById("mori-who").textContent =
+    (currentMember === "all" ? "家族みんなの本" : `${people[currentMember].name}の本`) + `　${shown.length}冊`;
+  document.getElementById("mori-empty").hidden = shown.length > 0;
+  shelf.hidden = shown.length === 0;
+  document.getElementById("mori-empty-text").innerHTML = moriFilter === "star"
+    ? "お気に入りの星がついた本は、まだありません。"
+    : "まだ本棚はからっぽです。<br>本を開いて「出会った本」にすると、ここに並びます。";
+
+  // 3冊ずつ、1段の棚に並べる
+  for (let i = 0; i < shown.length; i += SHELF_COLUMNS) {
+    const row = document.createElement("div");
+    row.className = "shelf-row";
+    for (const book of shown.slice(i, i + SHELF_COLUMNS)) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "shelf-book";
+      button.setAttribute("aria-label", `『${book.title}』を開く`);
+      button.style.background = colorFor(book.title);
+      button.addEventListener("click", () => openSheet(book.id));
+
+      const title = document.createElement("span");
+      title.className = "shelf-title";
+      title.textContent = book.title;
+      button.appendChild(title);
+
+      if (book.favorite) {
+        const star = document.createElement("img");
+        star.className = "shelf-star";
+        star.src = "images/star.png";
+        star.alt = "お気に入り";
+        button.appendChild(star);
+      }
+      const who = people[book.member];
+      if (who && who.icon) {
+        const icon = document.createElement("img");
+        icon.className = "shelf-who";
+        icon.src = who.icon;
+        icon.alt = who.name;
+        button.appendChild(icon);
+      }
+      row.appendChild(button);
+    }
+    shelf.appendChild(row);
+  }
+}
+
+document.querySelectorAll(".mini-chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    moriFilter = chip.dataset.filter;
+    document.querySelectorAll(".mini-chip").forEach((c) => {
+      const on = c === chip;
+      c.classList.toggle("selected", on);
+      c.setAttribute("aria-pressed", String(on));
+    });
+    renderMori();
+  });
+});
+
 function render() {
   renderCounts();
   renderBackupWhen();
+  renderMori();
   renderSeedFor();
   renderSeedList();
 }
 
-// ---------- 画面の切りかえ（今日 / 本の一覧） ----------
+// ---------- 画面の切りかえ（今日 / 本の一覧 / 本の森） ----------
 
 function showView() {
   const status = statusFromHash();
-  const name = status ? "tane" : "home";
+  const name = status ? "tane" : location.hash === "#mori" ? "mori" : "home";
   if (status) {
     currentStatus = status;
     renderSeedList();
@@ -623,6 +693,7 @@ function showView() {
   closeSheet();
   document.getElementById("view-home").hidden = name !== "home";
   document.getElementById("view-tane").hidden = name !== "tane";
+  document.getElementById("view-mori").hidden = name !== "mori";
   document.querySelectorAll(".tab[data-view]").forEach((tab) => {
     const active = tab.dataset.view === name;
     tab.classList.toggle("active", active);

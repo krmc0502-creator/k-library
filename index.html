@@ -98,7 +98,7 @@
     </section>
 
     <!-- 本の森への入口 -->
-    <a class="to-forest" href="#mori" data-soon="本の森">
+    <a class="to-forest" href="#mori">
       <span>本の森へ</span>
       <img src="images/tree.png" alt="">
     </a>
@@ -119,6 +119,29 @@
       <div class="empty" id="seed-empty">
         <img src="images/sprout.png" alt="">
         <p id="empty-text"></p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ===== 本の森（出会った本の木の本棚） ===== -->
+  <div class="view" id="view-mori" hidden>
+    <header class="page-head">
+      <img src="images/tree.png" alt="" class="round">
+      <h1>本の森</h1>
+    </header>
+    <main>
+      <p class="page-lead">これまでに出会った本と、家に迎えた本の本棚です。</p>
+      <div class="mori-bar">
+        <p class="page-who" id="mori-who"></p>
+        <div class="mori-filter" role="group" aria-label="しぼりこみ">
+          <button type="button" class="mini-chip selected" data-filter="all" aria-pressed="true">ぜんぶ</button>
+          <button type="button" class="mini-chip" data-filter="star" aria-pressed="false"><img src="images/star.png" alt="">お気に入り</button>
+        </div>
+      </div>
+      <div class="shelf" id="shelf"></div>
+      <div class="empty" id="mori-empty">
+        <img src="images/tree.png" alt="" class="round">
+        <p id="mori-empty-text"></p>
       </div>
     </main>
   </div>
@@ -160,7 +183,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-9"/><path d="M12 12c0-4-3-6-7-6 0 4 3 6 7 6z"/><path d="M12 12c0-4 3-6 7-6 0 4-3 6-7 6z"/></svg>
       本のたね
     </a>
-    <a href="#mori" class="tab" data-soon="本の森">
+    <a href="#mori" class="tab" data-view="mori">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22v-6"/><path d="M12 2l6 9h-3l4 5H5l4-5H6z"/></svg>
       本の森
     </a>
