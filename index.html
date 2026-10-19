@@ -85,6 +85,18 @@
       <a class="count" href="#deai"><p>出会った本</p><p class="num"><span id="count-met">0</span><small> 冊</small></p></a>
     </section>
 
+    <!-- 記録をまもる（書き出し・戻す） -->
+    <section class="card backup" aria-labelledby="backup-title">
+      <h2 id="backup-title">記録をまもる</h2>
+      <p class="hint">記録はこのiPhoneの中だけにあります。ときどきファイルに書き出して、「ファイル」アプリなどにしまっておくと安心です。</p>
+      <p class="backup-when" id="backup-when"></p>
+      <div class="backup-row">
+        <button type="button" class="backup-out" id="backup-out">ファイルに書き出す</button>
+        <label class="backup-in" for="backup-file">ファイルから戻す</label>
+        <input type="file" id="backup-file" accept=".json,application/json" hidden>
+      </div>
+    </section>
+
     <!-- 本の森への入口 -->
     <a class="to-forest" href="#mori" data-soon="本の森">
       <span>本の森へ</span>

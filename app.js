@@ -387,6 +387,108 @@ document.getElementById("sheet-remove").addEventListener("click", () => {
   removeBook(id);
 });
 
+// ---------- 記録をまもる（ファイルに書き出す・ファイルから戻す） ----------
+
+const BACKUP_KEY = "k-library-backup-at";
+
+function fileDate(d) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function renderBackupWhen() {
+  const last = loadSetting(BACKUP_KEY, "");
+  const area = document.getElementById("backup-when");
+  if (!last) {
+    area.textContent = books.length ? "まだ書き出したことはありません" : "";
+    return;
+  }
+  const days = Math.floor((Date.now() - new Date(last)) / 86400000);
+  area.textContent = `前回の書き出し：${formatDate(last)}` +
+    (days >= 30 ? "（そろそろ、また書き出しておきませんか？）" : "");
+}
+
+document.getElementById("backup-out").addEventListener("click", async () => {
+  const now = new Date();
+  const data = { app: "K.Library", version: 1, exportedAt: now.toISOString(), books: books };
+  const name = `K-Library-kiroku-${fileDate(now)}.json`;
+  const file = new File([JSON.stringify(data, null, 2)], name, { type: "application/json" });
+
+  try {
+    // iPhoneでは「共有」の画面が開き、「"ファイル"に保存」を選べる
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: name });
+    } else {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(file);
+      link.download = name;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }
+  } catch (e) {
+    // 共有の画面で「キャンセル」したときは、なにもしない
+    if (e && e.name === "AbortError") return;
+    showToast("書き出せませんでした。もう一度ためしてください");
+    return;
+  }
+  saveSetting(BACKUP_KEY, now.toISOString());
+  renderBackupWhen();
+  showToast(`${books.length}冊の記録を書き出しました`);
+});
+
+// 読みこんだ本が、ちゃんとした形かどうか確かめる
+function cleanBook(raw) {
+  if (!raw || typeof raw.title !== "string" || !raw.title.trim()) return null;
+  return {
+    id: typeof raw.id === "string" && raw.id ? raw.id : newId(),
+    title: raw.title.trim(),
+    author: typeof raw.author === "string" ? raw.author : "",
+    status: statuses[raw.status] ? raw.status : "seed",
+    member: people[raw.member] ? raw.member : "all",
+    favorite: raw.favorite === true,
+    addedAt: isNaN(new Date(raw.addedAt)) ? new Date().toISOString() : raw.addedAt,
+  };
+}
+
+// いまの記録は消さずに、ファイルにあってiPhoneにない本だけを足す
+document.getElementById("backup-file").addEventListener("change", async (event) => {
+  const input = event.target;
+  const file = input.files && input.files[0];
+  input.value = "";
+  if (!file) return;
+
+  let incoming;
+  try {
+    const data = JSON.parse(await file.text());
+    incoming = (Array.isArray(data) ? data : data.books).map(cleanBook).filter(Boolean);
+  } catch (e) {
+    showToast("K.Libraryの記録ファイルではないようです");
+    return;
+  }
+
+  const have = new Set(books.map((book) => book.id));
+  const added = incoming.filter((book) => !have.has(book.id));
+  if (!added.length) {
+    showToast("ファイルの本は、もう全部この中にあります");
+    return;
+  }
+  const before = books.slice();
+  books = books.concat(added);
+  if (!saveBooks()) {
+    books = before;
+    return;
+  }
+  render();
+  showToast(`${added.length}冊の記録を戻しました`, {
+    label: "もとに戻す",
+    run: () => {
+      books = before;
+      saveBooks();
+      render();
+    },
+  });
+});
+
 // ---------- 画面に表示する ----------
 
 const coverColors = ["#3E5A7A", "#C9783E", "#6F8F5E", "#8A5A7A", "#B8963E", "#4A6B6B", "#A0574A"];
@@ -504,6 +606,7 @@ function renderSeedList() {
 
 function render() {
   renderCounts();
+  renderBackupWhen();
   renderSeedFor();
   renderSeedList();
 }
