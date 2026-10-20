@@ -436,7 +436,7 @@ document.getElementById("sheet-find").addEventListener("click", async () => {
   const found = await searchBooks(book.title);
   if (openBookId !== book.id) return;
   if (!found) {
-    area.innerHTML = '<p class="results-note">いまは調べられませんでした。電波のよいところで、また試してください。</p>';
+    area.innerHTML = '<p class="results-note">いまは本の情報を調べられませんでした。タイトルだけでも、このまま使えます。</p>';
     return;
   }
   if (!found.length) {
@@ -464,9 +464,13 @@ document.getElementById("sheet-remove").addEventListener("click", () => {
 // ---------- 本の情報と表紙をさがす ----------
 // 本の情報：Google Books（無料・登録なし）／表紙が無いときは国立国会図書館サーチの書影
 
+// Google Books の「鍵」（無料）。鍵がないと、いまはGoogleに断られてしまう
+// 鍵は github.io からしか使えないように制限してあるので、ここに書いても安全です
+const GOOGLE_BOOKS_KEY = "";
+
 async function searchBooks(query) {
   const url = "https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=6&q=" +
-    encodeURIComponent(query);
+    encodeURIComponent(query) + (GOOGLE_BOOKS_KEY ? `&key=${GOOGLE_BOOKS_KEY}` : "");
   const stop = new AbortController();
   const timer = setTimeout(() => stop.abort(), 8000);
   try {
