@@ -75,6 +75,7 @@
         <button type="submit" id="seed-button">迎える</button>
       </form>
       <p class="seed-for" id="seed-for"></p>
+      <div class="search-results" id="seed-results" hidden></div>
     </section>
 
     <!-- 本の数 -->
@@ -153,6 +154,7 @@
       <div class="mini-cover" id="sheet-cover"></div>
       <div class="sheet-text">
         <h2 id="sheet-title"></h2>
+        <p class="sheet-author" id="sheet-author"></p>
         <p class="sheet-date" id="sheet-date"></p>
       </div>
       <button type="button" class="star-toggle" id="sheet-star" aria-pressed="false">
@@ -160,6 +162,9 @@
         <span>お気に入り</span>
       </button>
     </div>
+
+    <button type="button" class="find-button" id="sheet-find">本の情報と表紙をさがす</button>
+    <div class="search-results" id="sheet-results" hidden></div>
 
     <p class="sheet-label">いまの状態</p>
     <div class="choice-grid" id="sheet-status"></div>

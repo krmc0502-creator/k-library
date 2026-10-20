@@ -134,7 +134,9 @@ function saveSetting(key, value) {
 // {
 //   id:        本ごとの番号
 //   title:     タイトル
-//   author:    著者（あとで書籍情報から入れる）
+//   author:    著者（本の情報から入れる）
+//   isbn:      本の番号（ISBN）
+//   cover:     表紙の絵のアドレス
 //   status:    "seed"（本のたね） / "reserved"（予約中） / "borrowed"（貸出中）
 //              / "met"（出会った本） / "home"（家に迎えた本）
 //   member:    だれの本か "all"（家族） / "mama" / "aoi" / "yuto"
@@ -231,7 +233,39 @@ function visibleBooks() {
 
 // ---------- 本のたねを迎える ----------
 
-document.getElementById("seed-form").addEventListener("submit", (event) => {
+// 本を1冊、本のたねとして迎える（info: さがして見つかった本の情報。なければタイトルだけ）
+function addSeed(title, info) {
+  const book = {
+    id: newId(),
+    title: (info && info.title) || title,
+    author: (info && info.author) || "",
+    isbn: (info && info.isbn) || "",
+    cover: (info && info.cover) || "",
+    status: "seed",
+    member: currentMember,
+    favorite: false,
+    addedAt: new Date().toISOString(),
+  };
+  books.unshift(book);
+  if (!saveBooks()) {
+    books.shift();
+    return;
+  }
+  const input = document.getElementById("seed-input");
+  input.value = "";
+  input.blur();
+  hideSeedResults();
+  render();
+  showToast(`『${book.title}』を本のたねとして迎えました`);
+}
+
+function hideSeedResults() {
+  const area = document.getElementById("seed-results");
+  area.hidden = true;
+  area.innerHTML = "";
+}
+
+document.getElementById("seed-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const input = document.getElementById("seed-input");
   const title = input.value.trim();
@@ -240,23 +274,19 @@ document.getElementById("seed-form").addEventListener("submit", (event) => {
     input.focus();
     return;
   }
-  books.unshift({
-    id: newId(),
-    title: title,
-    author: "",
-    status: "seed",
-    member: currentMember,
-    favorite: false,
-    addedAt: new Date().toISOString(),
-  });
-  if (!saveBooks()) {
-    books.shift();
+  input.blur();
+  const area = document.getElementById("seed-results");
+  area.hidden = false;
+  area.innerHTML = '<p class="results-note">本をさがしています…</p>';
+
+  const found = await searchBooks(title);
+  if (input.value.trim() !== title) return; // さがしている間にタイトルが変わったとき
+  if (!found || !found.length) {
+    addSeed(title);
+    if (!found) showToast(`『${title}』を迎えました（本の情報は、あとで調べられます）`);
     return;
   }
-  input.value = "";
-  input.blur();
-  render();
-  showToast(`『${title}』を本のたねとして迎えました`);
+  showResults(area, found, (info) => addSeed(title, info), `「${title}」だけで迎える`, () => addSeed(title));
 });
 
 // ---------- 本を外す（すぐに「もとに戻す」もできる） ----------
@@ -320,9 +350,18 @@ function choiceButton(label, selected, onClick, icon) {
 function renderSheet() {
   const book = findBook(openBookId);
   if (!book) return;
-  document.getElementById("sheet-cover").style.background = colorFor(book.title);
+  const sheetCover = document.getElementById("sheet-cover");
+  if (sheetCover.dataset.for !== book.id + book.cover + book.isbn) {
+    sheetCover.innerHTML = "";
+    sheetCover.classList.remove("has-cover");
+    putCover(sheetCover, book);
+    sheetCover.dataset.for = book.id + book.cover + book.isbn;
+  }
   document.getElementById("sheet-title").textContent = book.title;
+  document.getElementById("sheet-author").textContent = book.author || "";
   document.getElementById("sheet-date").textContent = `${formatDate(book.addedAt)}に迎えた本`;
+  document.getElementById("sheet-find").textContent =
+    book.isbn || book.cover ? "本の情報を調べなおす" : "本の情報と表紙をさがす";
 
   const star = document.getElementById("sheet-star");
   star.classList.toggle("on", !!book.favorite);
@@ -353,6 +392,7 @@ function renderSheet() {
 
 function openSheet(id) {
   openBookId = id;
+  hideSheetResults();
   renderSheet();
   document.getElementById("sheet-back").hidden = false;
   document.getElementById("sheet").hidden = false;
@@ -381,11 +421,149 @@ document.getElementById("sheet-star").addEventListener("click", () => {
   }
 });
 
+function hideSheetResults() {
+  const area = document.getElementById("sheet-results");
+  area.hidden = true;
+  area.innerHTML = "";
+}
+
+document.getElementById("sheet-find").addEventListener("click", async () => {
+  const book = findBook(openBookId);
+  if (!book) return;
+  const area = document.getElementById("sheet-results");
+  area.hidden = false;
+  area.innerHTML = '<p class="results-note">本をさがしています…</p>';
+  const found = await searchBooks(book.title);
+  if (openBookId !== book.id) return;
+  if (!found) {
+    area.innerHTML = '<p class="results-note">いまは調べられませんでした。電波のよいところで、また試してください。</p>';
+    return;
+  }
+  if (!found.length) {
+    area.innerHTML = '<p class="results-note">見つかりませんでした。タイトルを少し短くすると見つかることがあります。</p>';
+    return;
+  }
+  showResults(area, found, (info) => {
+    const before = changeBook(book.id, { title: info.title, author: info.author, isbn: info.isbn, cover: info.cover });
+    hideSheetResults();
+    if (before) {
+      showToast("本の情報を入れました", {
+        label: "もとに戻す",
+        run: () => changeBook(book.id, { title: before.title, author: before.author, isbn: before.isbn || "", cover: before.cover || "" }),
+      });
+    }
+  }, "やめる", hideSheetResults);
+});
+
 document.getElementById("sheet-remove").addEventListener("click", () => {
   const id = openBookId;
   closeSheet();
   removeBook(id);
 });
+
+// ---------- 本の情報と表紙をさがす ----------
+// 本の情報：Google Books（無料・登録なし）／表紙が無いときは国立国会図書館サーチの書影
+
+async function searchBooks(query) {
+  const url = "https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=6&q=" +
+    encodeURIComponent(query);
+  const stop = new AbortController();
+  const timer = setTimeout(() => stop.abort(), 8000);
+  try {
+    const response = await fetch(url, { signal: stop.signal });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return (data.items || []).map((item) => {
+      const v = item.volumeInfo || {};
+      const ids = v.industryIdentifiers || [];
+      const isbn = (ids.find((i) => i.type === "ISBN_13") || ids.find((i) => i.type === "ISBN_10") || {}).identifier || "";
+      const thumb = (v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail)) || "";
+      return {
+        title: v.subtitle ? `${v.title} ${v.subtitle}` : v.title || "",
+        author: (v.authors || []).join("、"),
+        publisher: v.publisher || "",
+        year: (v.publishedDate || "").slice(0, 4),
+        isbn: isbn,
+        cover: thumb.replace(/^http:/, "https:").replace("&edge=curl", ""),
+      };
+    }).filter((b) => b.title);
+  } catch (e) {
+    return null; // 電波がない・混んでいるときは、調べずに進む
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// 表紙の絵の候補（Google Books → 国立国会図書館サーチ）
+function coverSources(book) {
+  const list = [];
+  if (book.cover) list.push(book.cover);
+  if (book.isbn && book.isbn.length === 13) list.push(`https://ndlsearch.ndl.go.jp/thumbnail/${book.isbn}.jpg`);
+  return list;
+}
+
+// 色の板の上に、表紙の絵が見つかれば重ねる
+function putCover(element, book) {
+  element.style.background = colorFor(book.title);
+  const sources = coverSources(book);
+  if (!sources.length) return;
+  const img = document.createElement("img");
+  img.className = "cover-img";
+  img.alt = "";
+  img.loading = "lazy";
+  let n = 0;
+  img.addEventListener("error", () => {
+    n += 1;
+    if (n < sources.length) img.src = sources[n];
+    else img.remove();
+  });
+  // 中身のない小さな絵（1×1など）は表紙として使わない
+  img.addEventListener("load", () => {
+    if (img.naturalWidth < 20) img.dispatchEvent(new Event("error"));
+    else element.classList.add("has-cover");
+  });
+  img.src = sources[0];
+  element.prepend(img);
+}
+
+// 候補の本を並べる（onPick: 選んだとき、plainLabel/onPlain: 候補を使わないとき）
+function showResults(area, found, onPick, plainLabel, onPlain) {
+  area.hidden = false;
+  area.innerHTML = '<p class="results-note">この本ですか？</p>';
+  const list = document.createElement("div");
+  list.className = "results";
+  for (const info of found) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "result";
+    const cover = document.createElement("div");
+    cover.className = "mini-cover";
+    putCover(cover, info);
+    const text = document.createElement("div");
+    text.className = "seed-text";
+    const title = document.createElement("p");
+    title.className = "seed-title";
+    title.textContent = info.title;
+    const meta = document.createElement("p");
+    meta.className = "result-meta";
+    meta.textContent = [info.author, info.publisher, info.year].filter(Boolean).join("・");
+    text.append(title, meta);
+    button.append(cover, text);
+    button.addEventListener("click", () => onPick(info));
+    list.appendChild(button);
+  }
+  area.appendChild(list);
+  const plain = document.createElement("button");
+  plain.type = "button";
+  plain.className = "plain-add";
+  plain.textContent = plainLabel;
+  plain.addEventListener("click", onPlain);
+  area.appendChild(plain);
+  const credit = document.createElement("p");
+  credit.className = "credit";
+  credit.textContent = "本の情報：Google Books　表紙：Google Books・国立国会図書館サーチ";
+  area.appendChild(credit);
+}
 
 // ---------- 記録をまもる（ファイルに書き出す・ファイルから戻す） ----------
 
@@ -443,6 +621,8 @@ function cleanBook(raw) {
     id: typeof raw.id === "string" && raw.id ? raw.id : newId(),
     title: raw.title.trim(),
     author: typeof raw.author === "string" ? raw.author : "",
+    isbn: typeof raw.isbn === "string" ? raw.isbn : "",
+    cover: typeof raw.cover === "string" && raw.cover.startsWith("https://") ? raw.cover : "",
     status: statuses[raw.status] ? raw.status : "seed",
     member: people[raw.member] ? raw.member : "all",
     favorite: raw.favorite === true,
@@ -565,7 +745,7 @@ function renderSeedList() {
 
     const cover = document.createElement("div");
     cover.className = "mini-cover";
-    cover.style.background = colorFor(book.title);
+    putCover(cover, book);
 
     const text = document.createElement("div");
     text.className = "seed-text";
@@ -632,13 +812,13 @@ function renderMori() {
       button.type = "button";
       button.className = "shelf-book";
       button.setAttribute("aria-label", `『${book.title}』を開く`);
-      button.style.background = colorFor(book.title);
       button.addEventListener("click", () => openSheet(book.id));
 
       const title = document.createElement("span");
       title.className = "shelf-title";
       title.textContent = book.title;
       button.appendChild(title);
+      putCover(button, book);
 
       if (book.favorite) {
         const star = document.createElement("img");

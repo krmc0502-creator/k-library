@@ -1,6 +1,6 @@
 // 電波がないときも K.Library を開けるように、画面の部品をiPhoneにしまっておく係
 // 画面を変更したら、下の数字を1つ増やすと新しい画面に入れかわります
-const VERSION = "k-library-v6";
+const VERSION = "k-library-v7";
 
 const FILES = [
   "./",
@@ -36,6 +36,8 @@ self.addEventListener("activate", (event) => {
 // まずネットから新しいものを取りに行き、つながらないときはしまっておいたものを使う
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  // 本の情報や表紙など、よそのサイトのものはしまわない
+  if (new URL(event.request.url).origin !== self.location.origin) return;
   event.respondWith(
     fetch(event.request)
       .then((response) => {
