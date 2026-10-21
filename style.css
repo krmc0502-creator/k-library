@@ -161,6 +161,11 @@ h2 {
 }
 
 .book {
+  width: 100%;
+  font-size: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -192,7 +197,20 @@ h2 {
   white-space: pre-line;
 }
 
+.cover .cover-title { position: relative; overflow-wrap: anywhere; }
+.cover.has-cover .cover-title { visibility: hidden; }
+.cover { overflow: visible; color: #FBF7EC; }
+.cover .cover-img { border-radius: 5px 10px 10px 5px; }
+
+.today-empty {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
 .mark {
+  z-index: 1;
   position: absolute;
   right: -6px;
   top: -6px;

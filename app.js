@@ -29,66 +29,6 @@ const now = new Date();
 document.getElementById("hello").textContent = greetingFor(now.getHours());
 document.getElementById("season").textContent = seasonWords[now.getMonth() + 1];
 
-// ---------- 今日の出会い（いまは見本の4冊） ----------
-// あとの段階で、本のたねや季節に合わせて毎朝選ぶしくみに入れかえます
-
-const sampleBooks = [
-  { reason: "本のたねから", reasonColor: "#3B5232", reasonBg: "#E3EBD9",
-    title: "モモ", author: "ミヒャエル・エンデ",
-    cover: "#3E5A7A", coverText: "#F7F2E4", mark: "sprout" },
-  { reason: "秋の本", reasonColor: "#7A4A16", reasonBg: "#F5E4CC",
-    title: "14ひきのあきまつり", author: "いわむらかずお",
-    cover: "#C9783E", coverText: "#FFF8EC", coverTitle: "14ひきの\nあきまつり" },
-  { reason: "いま人気の本", reasonColor: "#6A3E5A", reasonBg: "#F1E1EA",
-    title: "おばけずかん", author: "斉藤洋",
-    cover: "#2F3B4C", coverText: "#F2EEE2" },
-  { reason: "好きな作家から", reasonColor: "#4A4A6E", reasonBg: "#E4E4F0",
-    title: "ねずみくんのチョッキ", author: "なかえよしを",
-    cover: "#EFE6D2", coverText: "#A0362B", coverTitle: "ねずみくんの\nチョッキ", mark: "star" },
-];
-
-function showBooks(books) {
-  const area = document.getElementById("books");
-  area.innerHTML = "";
-  for (const book of books) {
-    const card = document.createElement("article");
-    card.className = "book";
-
-    const reason = document.createElement("span");
-    reason.className = "reason";
-    reason.textContent = book.reason;
-    reason.style.color = book.reasonColor;
-    reason.style.background = book.reasonBg;
-
-    const cover = document.createElement("div");
-    cover.className = "cover";
-    cover.textContent = book.coverTitle || book.title;
-    cover.style.background = book.cover;
-    cover.style.color = book.coverText;
-    if (book.mark) {
-      const mark = document.createElement("img");
-      mark.className = "mark";
-      mark.src = book.mark === "star" ? "images/star.png" : "images/sprout.png";
-      mark.alt = book.mark === "star" ? "お気に入り" : "本のたね";
-      cover.appendChild(mark);
-    }
-
-    const info = document.createElement("div");
-    const title = document.createElement("p");
-    title.className = "title";
-    title.textContent = book.title;
-    const author = document.createElement("p");
-    author.className = "author";
-    author.textContent = book.author;
-    info.append(title, author);
-
-    card.append(reason, cover, info);
-    area.appendChild(card);
-  }
-}
-
-showBooks(sampleBooks);
-
 // ---------- ちいさなお知らせ ----------
 
 let toastTimer;
@@ -219,6 +159,7 @@ function selectMember(id) {
   });
   saveSetting("k-library-member", id);
   render();
+  prepareToday();
 }
 
 memberButtons.forEach((button) => {
@@ -569,6 +510,267 @@ function showResults(area, found, onPick, plainLabel, onPlain) {
   area.appendChild(credit);
 }
 
+// ---------- 今日の出会い（毎朝4冊） ----------
+// 選び方（AIは使わない、決まりだけ）
+//   1. 本のたねから1冊        「そろそろどうですか」
+//   2. 季節の本1冊            月ごとのことばで本の情報をさがす
+//   3. ながく愛される本1冊    昔から読みつがれている本のリストから
+//   4. 好きな作家から1冊      出会った本の作家の、ほかの本
+// 4冊は1日に1回だけ選び、iPhoneに覚えておく（何度も問い合わせない）
+
+const seasonSearch = {
+  1: ["雪 えほん", "お正月 えほん", "冬 どうぶつ えほん"],
+  2: ["節分 えほん", "雪 えほん", "冬 えほん"],
+  3: ["ひなまつり えほん", "春 えほん", "卒園 えほん"],
+  4: ["春 えほん", "さくら えほん", "入学 えほん"],
+  5: ["こどもの日 えほん", "こいのぼり えほん", "むし えほん"],
+  6: ["雨 えほん", "かたつむり えほん", "あじさい えほん"],
+  7: ["七夕 えほん", "海 えほん", "夏 えほん"],
+  8: ["夏休み 本", "花火 えほん", "おばけ えほん"],
+  9: ["お月見 えほん", "秋 えほん", "虫の声 えほん"],
+  10: ["きのこ えほん", "ハロウィン えほん", "秋 えほん"],
+  11: ["どんぐり えほん", "読書 えほん", "落ち葉 えほん"],
+  12: ["クリスマス えほん", "冬 えほん", "サンタクロース えほん"],
+};
+
+function seasonName(month) {
+  if (month >= 3 && month <= 5) return "春";
+  if (month >= 6 && month <= 8) return "夏";
+  if (month >= 9 && month <= 11) return "秋";
+  return "冬";
+}
+
+const lovedBooks = [
+  "ぐりとぐら", "はらぺこあおむし", "スイミー", "ねないこだれだ", "100万回生きたねこ",
+  "おおきなかぶ", "てぶくろ", "しろくまちゃんのほっとけーき", "ぐるんぱのようちえん",
+  "からすのパンやさん", "だるまさんが", "いないいないばあ", "エルマーのぼうけん",
+  "くまのがっこう", "11ぴきのねこ", "そらまめくんのベッド", "わすれられないおくりもの",
+  "きんぎょがにげた", "おしいれのぼうけん", "めっきらもっきらどおんどん", "ちいさいおうち",
+  "かいじゅうたちのいるところ", "おおきな木", "ふたりはともだち", "14ひきのあさごはん",
+  "バムとケロのにちようび", "こんとあき", "よるくま", "ももいろのきりん", "いやいやえん",
+  "魔女の宅急便", "モモ", "霧のむこうのふしぎな町", "はてしない物語", "星の王子さま",
+  "西の魔女が死んだ", "赤毛のアン", "冒険者たち", "ルドルフとイッパイアッテナ", "ぼくは王さま",
+];
+
+const pickStyles = {
+  seed: { color: "#3B5232", bg: "#E3EBD9" },
+  season: { color: "#7A4A16", bg: "#F5E4CC" },
+  loved: { color: "#6A3E5A", bg: "#F1E1EA" },
+  author: { color: "#4A4A6E", bg: "#E4E4F0" },
+};
+
+const TODAY_KEY = "k-library-today";
+
+function todayString() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+// 日付と人から、毎日ちがうけれど同じ日は同じになる「くじ」を作る
+function dailyRandom(salt) {
+  let h = 2166136261;
+  for (const ch of todayString() + currentMember + salt) {
+    h ^= ch.codePointAt(0);
+    h = Math.imul(h, 16777619);
+  }
+  return () => {
+    h ^= h << 13; h ^= h >>> 17; h ^= h << 5;
+    return (h >>> 0) / 4294967296;
+  };
+}
+
+function pickOne(list, random) {
+  return list.length ? list[Math.floor(random() * list.length)] : null;
+}
+
+function sameTitle(a, b) {
+  const clean = (t) => (t || "").replace(/[\s　]/g, "").toLowerCase();
+  return clean(a) === clean(b);
+}
+
+function alreadyHave(title) {
+  return books.some((book) => sameTitle(book.title, title));
+}
+
+// さがした結果から、まだ持っていない本を1冊（表紙のあるものを優先）
+function chooseFound(found, random) {
+  const fresh = (found || []).filter((info) => !alreadyHave(info.title));
+  const withCover = fresh.filter((info) => info.cover || info.isbn);
+  return pickOne(withCover.length ? withCover : fresh, random);
+}
+
+async function chooseTodayPicks() {
+  const mine = visibleBooks();
+  const used = new Set();
+  const picks = [];
+  const add = (pick) => {
+    if (!pick || picks.length >= 4) return;
+    const key = pick.bookId || pick.title;
+    if (used.has(key)) return;
+    used.add(key);
+    picks.push(pick);
+  };
+  const month = new Date().getMonth() + 1;
+
+  // 1. 本のたねから
+  const seeds = mine.filter((book) => book.status === "seed");
+  const seed = pickOne(seeds, dailyRandom("seed"));
+  if (seed) add({ kind: "seed", reason: "本のたねから", bookId: seed.id });
+
+  // 2〜4は本の情報をさがすので、いっしょに問い合わせる
+  const seasonWord = pickOne(seasonSearch[month], dailyRandom("season-word"));
+  const lovedChoices = lovedBooks.filter((title) => !alreadyHave(title));
+  const lovedTitle = pickOne(lovedChoices, dailyRandom("loved"));
+  const metWithAuthor = mine.filter((book) => (book.status === "met" || book.status === "home") && book.author);
+  const favorites = metWithAuthor.filter((book) => book.favorite);
+  const authorBook = pickOne(favorites.length ? favorites : metWithAuthor, dailyRandom("author"));
+  const author = authorBook ? authorBook.author.split("、")[0] : "";
+
+  const [seasonFound, lovedFound, authorFound] = await Promise.all([
+    searchBooks(seasonWord),
+    lovedTitle ? searchBooks(`intitle:${lovedTitle}`) : null,
+    author ? searchBooks(`inauthor:${author}`) : null,
+  ]);
+
+  const season = chooseFound(seasonFound, dailyRandom("season"));
+  if (season) add({ kind: "season", reason: `${seasonName(month)}の本`, ...season });
+
+  if (lovedTitle) {
+    const match = (lovedFound || []).find((info) => info.title.startsWith(lovedTitle)) || null;
+    add({ kind: "loved", reason: "ながく愛される本", ...(match || { title: lovedTitle, author: "" }) });
+  }
+
+  const byAuthor = chooseFound(authorFound, dailyRandom("by-author"));
+  if (byAuthor) add({ kind: "author", reason: `${author}さんの本`, ...byAuthor });
+
+  // 足りないときは、本のたね・ながく愛される本で埋める
+  const random = dailyRandom("fill");
+  for (const book of seeds.slice().sort(() => random() - 0.5)) {
+    add({ kind: "seed", reason: "本のたねから", bookId: book.id });
+  }
+  for (const title of lovedChoices.slice().sort(() => random() - 0.5)) {
+    add({ kind: "loved", reason: "ながく愛される本", title: title, author: "" });
+  }
+  // 問い合わせが全部うまくいかなかった日は、覚えずに次に開いたときにもう一度選ぶ
+  const ok = seasonFound !== null || lovedFound !== null || authorFound !== null;
+  return { picks, ok };
+}
+
+let todayPicks = [];
+let choosing = false;
+
+async function prepareToday() {
+  const date = todayString();
+  let saved = {};
+  try {
+    saved = JSON.parse(localStorage.getItem(TODAY_KEY)) || {};
+  } catch (e) {
+    saved = {};
+  }
+  if (saved.date === date && saved.picks && saved.picks[currentMember]) {
+    todayPicks = saved.picks[currentMember].slice();
+    // 今日の4冊を選んだあとに本のたねを迎えたときは、1冊を本のたねに入れかえる
+    const hasSeed = todayPicks.some((pick) => pick.kind === "seed" && findBook(pick.bookId));
+    const seeds = visibleBooks().filter((book) => book.status === "seed");
+    if (!hasSeed && seeds.length) {
+      const seed = pickOne(seeds, dailyRandom("seed"));
+      todayPicks = [{ kind: "seed", reason: "本のたねから", bookId: seed.id },
+        ...todayPicks.filter((pick) => pick.kind !== "seed")].slice(0, 4);
+    }
+    renderToday();
+    return;
+  }
+  if (choosing) return;
+  choosing = true;
+  document.getElementById("today-note").textContent = "今日の4冊を選んでいます…";
+  const member = currentMember;
+  const { picks, ok } = await chooseTodayPicks();
+  choosing = false;
+  if (member !== currentMember) return prepareToday();
+  todayPicks = picks;
+  if (ok) {
+    if (saved.date !== date) saved = { date: date, picks: {} };
+    saved.picks[member] = picks;
+    try {
+      localStorage.setItem(TODAY_KEY, JSON.stringify(saved));
+    } catch (e) {
+      // 覚えられなくても、表示はできる
+    }
+  }
+  renderToday();
+}
+
+function renderToday() {
+  const area = document.getElementById("books");
+  area.innerHTML = "";
+  const d = new Date();
+  document.getElementById("today-note").textContent = `${d.getMonth() + 1}月${d.getDate()}日の4冊`;
+
+  for (const pick of todayPicks) {
+    // 本のたねから選んだ本は、いまの記録を使う（外したときは表示しない）
+    const book = pick.bookId ? findBook(pick.bookId) : null;
+    if (pick.bookId && !book) continue;
+    const info = book || pick;
+    const mine = book || books.find((b) => sameTitle(b.title, pick.title));
+
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "book";
+    card.setAttribute("aria-label", `${pick.reason}『${info.title}』`);
+
+    const style = pickStyles[pick.kind] || pickStyles.seed;
+    const reason = document.createElement("span");
+    reason.className = "reason";
+    reason.textContent = pick.reason;
+    reason.style.color = style.color;
+    reason.style.background = style.bg;
+
+    const cover = document.createElement("div");
+    cover.className = "cover";
+    const coverTitle = document.createElement("span");
+    coverTitle.className = "cover-title";
+    coverTitle.textContent = info.title;
+    cover.appendChild(coverTitle);
+    putCover(cover, info);
+    if (mine) {
+      const mark = document.createElement("img");
+      mark.className = "mark";
+      mark.src = mine.favorite ? "images/star.png" : "images/sprout.png";
+      mark.alt = mine.favorite ? "お気に入り" : "迎えた本";
+      cover.appendChild(mark);
+    }
+
+    const text = document.createElement("div");
+    const title = document.createElement("p");
+    title.className = "title";
+    title.textContent = info.title;
+    const author = document.createElement("p");
+    author.className = "author";
+    author.textContent = info.author || "";
+    text.append(title, author);
+
+    card.append(reason, cover, text);
+    card.addEventListener("click", () => {
+      if (mine) {
+        openSheet(mine.id);
+        return;
+      }
+      showToast(`『${info.title}』を本のたねにしますか？`, {
+        label: "迎える",
+        run: () => addSeed(info.title, pick.isbn || pick.cover ? pick : null),
+      });
+    });
+    area.appendChild(card);
+  }
+
+  document.getElementById("today-empty").hidden = area.children.length > 0;
+}
+
+// 次の朝にアプリを開いたら、新しい4冊を選ぶ
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") prepareToday();
+});
+
 // ---------- 記録をまもる（ファイルに書き出す・ファイルから戻す） ----------
 
 const BACKUP_KEY = "k-library-backup-at";
@@ -858,6 +1060,7 @@ document.querySelectorAll(".mini-chip").forEach((chip) => {
 });
 
 function render() {
+  if (todayPicks.length) renderToday();
   renderCounts();
   renderBackupWhen();
   renderMori();
