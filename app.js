@@ -409,8 +409,8 @@ document.getElementById("sheet-remove").addEventListener("click", () => {
 // 鍵は github.io からしか使えないように制限してあるので、ここに書いても安全です
 const GOOGLE_BOOKS_KEY = "AIzaSyCq_SoQy4M8dC2DZQ1IBKTCXnwfYyp2Q0I";
 
-async function searchBooks(query) {
-  const url = "https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=6&country=JP&q=" +
+async function searchBooks(query, max = 6) {
+  const url = `https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=${max}&country=JP&q=` +
     encodeURIComponent(query) + (GOOGLE_BOOKS_KEY ? `&key=${GOOGLE_BOOKS_KEY}` : "");
   const stop = new AbortController();
   const timer = setTimeout(() => stop.abort(), 8000);
@@ -428,6 +428,7 @@ async function searchBooks(query) {
         author: (v.authors || []).join("、"),
         publisher: v.publisher || "",
         year: (v.publishedDate || "").slice(0, 4),
+        pages: v.pageCount || 0,
         isbn: isbn,
         cover: thumb.replace(/^http:/, "https:").replace("&edge=curl", ""),
       };
@@ -575,7 +576,7 @@ const pickStyles = {
   author: { color: "#4A4A6E", bg: "#E4E4F0" },
 };
 
-const TODAY_KEY = "k-library-today-v2";
+const TODAY_KEY = "k-library-today-v3";
 
 function todayString() {
   const d = new Date();
@@ -609,8 +610,13 @@ function alreadyHave(title) {
 }
 
 // さがした結果から、まだ持っていない本を1冊（表紙のあるものを優先）
-function chooseFound(found, random) {
-  const fresh = (found || []).filter((info) => !alreadyHave(info.title));
+// 目録・事典・研究書など、読みものではない本
+const notForReading = /目録|カタログ|年鑑|事典|辞典|図鑑総|白書|便覧|名鑑|ガイド|研究|論集|講座|入門|ブックリスト|書誌|索引|資料|報告|案内|読み聞かせ.*(本|リスト)|雑誌/;
+
+function chooseFound(found, random, level) {
+  let fresh = (found || []).filter((info) => !alreadyHave(info.title) && !notForReading.test(info.title));
+  // 絵本のときは、ページ数がわかって多すぎる本（80ページより多い）は外す
+  if (level === "baby" || level === "ehon") fresh = fresh.filter((info) => !info.pages || info.pages <= 80);
   const withCover = fresh.filter((info) => info.cover || info.isbn);
   return pickOne(withCover.length ? withCover : fresh, random);
 }
@@ -636,7 +642,8 @@ async function chooseTodayPicks() {
   // 2〜4は本の情報をさがすので、いっしょに問い合わせる
   const levels = readingLevels[currentMember] || readingLevels.all;
   const level = pickOne(levels, dailyRandom("level"));
-  const seasonWord = `${pickOne(seasonSearch[month], dailyRandom("season-word"))} ${seasonSuffix[level]}`;
+  const seasonTheme = pickOne(seasonSearch[month], dailyRandom("season-word"));
+  const seasonWord = `${seasonTheme} ${seasonSuffix[level]}`;
   const lovedChoices = levels.flatMap((key) => lovedBooks[key]).filter((title) => !alreadyHave(title));
   const lovedTitle = pickOne(lovedChoices, dailyRandom("loved"));
   const metWithAuthor = mine.filter((book) => (book.status === "met" || book.status === "home") && book.author);
@@ -645,12 +652,16 @@ async function chooseTodayPicks() {
   const author = authorBook ? authorBook.author.split("、")[0] : "";
 
   const [seasonFound, lovedFound, authorFound] = await Promise.all([
-    searchBooks(seasonWord),
+    searchBooks(seasonWord, 20),
     lovedTitle ? searchBooks(`intitle:${lovedTitle}`) : null,
     author ? searchBooks(`inauthor:${author}`) : null,
   ]);
 
-  const season = chooseFound(seasonFound, dailyRandom("season"));
+  // タイトルに季節のことばが入っている本を優先する
+  const kana = { 秋: "あき", 春: "はる", 夏: "なつ", 冬: "ふゆ", 雪: "ゆき", 月: "つき", 雨: "あめ", 海: "うみ" };
+  const themed = (seasonFound || []).filter((info) =>
+    info.title.includes(seasonTheme) || (kana[seasonTheme] && info.title.includes(kana[seasonTheme])));
+  const season = chooseFound(themed, dailyRandom("season"), level) || chooseFound(seasonFound, dailyRandom("season"), level);
   if (season) add({ kind: "season", reason: `${seasonName(month)}の本`, ...season });
 
   if (lovedTitle) {

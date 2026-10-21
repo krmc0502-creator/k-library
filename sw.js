@@ -1,6 +1,6 @@
 // 電波がないときも K.Library を開けるように、画面の部品をiPhoneにしまっておく係
 // 画面を変更したら、下の数字を1つ増やすと新しい画面に入れかわります
-const VERSION = "k-library-v11";
+const VERSION = "k-library-v12";
 
 const FILES = [
   "./",
