@@ -466,10 +466,10 @@ document.getElementById("sheet-remove").addEventListener("click", () => {
 
 // Google Books の「鍵」（無料）。鍵がないと、いまはGoogleに断られてしまう
 // 鍵は github.io からしか使えないように制限してあるので、ここに書いても安全です
-const GOOGLE_BOOKS_KEY = "";
+const GOOGLE_BOOKS_KEY = "AIzaSyCq_SoQy4M8dC2DZQ1IBKTCXnwfYyp2Q0I";
 
 async function searchBooks(query) {
-  const url = "https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=6&q=" +
+  const url = "https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=6&country=JP&q=" +
     encodeURIComponent(query) + (GOOGLE_BOOKS_KEY ? `&key=${GOOGLE_BOOKS_KEY}` : "");
   const stop = new AbortController();
   const timer = setTimeout(() => stop.abort(), 8000);
