@@ -518,20 +518,32 @@ function showResults(area, found, onPick, plainLabel, onPlain) {
 //   4. 好きな作家から1冊      出会った本の作家の、ほかの本
 // 4冊は1日に1回だけ選び、iPhoneに覚えておく（何度も問い合わせない）
 
+// 季節のことば（このあとに、家族それぞれに合う「えほん」などを付けてさがす）
 const seasonSearch = {
-  1: ["雪 えほん", "お正月 えほん", "冬 どうぶつ えほん"],
-  2: ["節分 えほん", "雪 えほん", "冬 えほん"],
-  3: ["ひなまつり えほん", "春 えほん", "卒園 えほん"],
-  4: ["春 えほん", "さくら えほん", "入学 えほん"],
-  5: ["こどもの日 えほん", "こいのぼり えほん", "むし えほん"],
-  6: ["雨 えほん", "かたつむり えほん", "あじさい えほん"],
-  7: ["七夕 えほん", "海 えほん", "夏 えほん"],
-  8: ["夏休み 本", "花火 えほん", "おばけ えほん"],
-  9: ["お月見 えほん", "秋 えほん", "虫の声 えほん"],
-  10: ["きのこ えほん", "ハロウィン えほん", "秋 えほん"],
-  11: ["どんぐり えほん", "読書 えほん", "落ち葉 えほん"],
-  12: ["クリスマス えほん", "冬 えほん", "サンタクロース えほん"],
+  1: ["雪", "お正月", "冬"],
+  2: ["節分", "雪", "冬"],
+  3: ["ひなまつり", "春", "卒業"],
+  4: ["春", "さくら", "入学"],
+  5: ["こどもの日", "こいのぼり", "むし"],
+  6: ["雨", "かたつむり", "あじさい"],
+  7: ["七夕", "海", "夏"],
+  8: ["夏休み", "花火", "おばけ"],
+  9: ["お月見", "秋", "月"],
+  10: ["きのこ", "ハロウィン", "秋"],
+  11: ["どんぐり", "読書", "落ち葉"],
+  12: ["クリスマス", "冬", "サンタクロース"],
 };
+
+// 家族それぞれに合う本の種類（ゆうと2歳：絵本、あおい5歳：絵本と児童書、ママ：大人の本）
+const readingLevels = {
+  all: ["baby", "ehon", "jido", "adult"],
+  mama: ["adult"],
+  aoi: ["ehon", "jido"],
+  yuto: ["baby", "ehon"],
+};
+
+// 季節の本をさがすときに付けることば
+const seasonSuffix = { baby: "あかちゃん えほん", ehon: "えほん", jido: "童話", adult: "小説" };
 
 function seasonName(month) {
   if (month >= 3 && month <= 5) return "春";
@@ -540,17 +552,21 @@ function seasonName(month) {
   return "冬";
 }
 
-const lovedBooks = [
-  "ぐりとぐら", "はらぺこあおむし", "スイミー", "ねないこだれだ", "100万回生きたねこ",
-  "おおきなかぶ", "てぶくろ", "しろくまちゃんのほっとけーき", "ぐるんぱのようちえん",
-  "からすのパンやさん", "だるまさんが", "いないいないばあ", "エルマーのぼうけん",
-  "くまのがっこう", "11ぴきのねこ", "そらまめくんのベッド", "わすれられないおくりもの",
-  "きんぎょがにげた", "おしいれのぼうけん", "めっきらもっきらどおんどん", "ちいさいおうち",
-  "かいじゅうたちのいるところ", "おおきな木", "ふたりはともだち", "14ひきのあさごはん",
-  "バムとケロのにちようび", "こんとあき", "よるくま", "ももいろのきりん", "いやいやえん",
-  "魔女の宅急便", "モモ", "霧のむこうのふしぎな町", "はてしない物語", "星の王子さま",
-  "西の魔女が死んだ", "赤毛のアン", "冒険者たち", "ルドルフとイッパイアッテナ", "ぼくは王さま",
-];
+// 昔から読みつがれている本（baby: 赤ちゃん絵本 / ehon: 絵本 / jido: 児童書 / adult: 大人の本）
+const lovedBooks = {
+  baby: ["いないいないばあ", "だるまさんが", "しろくまちゃんのほっとけーき", "きんぎょがにげた",
+    "ねないこだれだ", "はらぺこあおむし", "じゃあじゃあびりびり", "がたん ごとん がたん ごとん",
+    "くだもの", "おつきさまこんばんは", "もこ もこもこ", "ノンタン ぶらんこのせて"],
+  ehon: ["ぐりとぐら", "スイミー", "100万回生きたねこ", "おおきなかぶ", "てぶくろ",
+    "ぐるんぱのようちえん", "からすのパンやさん", "くまのがっこう", "11ぴきのねこ",
+    "そらまめくんのベッド", "わすれられないおくりもの", "おしいれのぼうけん",
+    "めっきらもっきらどおんどん", "ちいさいおうち", "かいじゅうたちのいるところ",
+    "14ひきのあさごはん", "バムとケロのにちようび", "こんとあき", "よるくま"],
+  jido: ["エルマーのぼうけん", "いやいやえん", "ももいろのきりん", "ふたりはともだち",
+    "くまの子ウーフ", "ぼくは王さま", "ちいさいモモちゃん", "ルドルフとイッパイアッテナ"],
+  adult: ["モモ", "はてしない物語", "星の王子さま", "西の魔女が死んだ", "赤毛のアン",
+    "霧のむこうのふしぎな町", "博士の愛した数式", "夜のピクニック", "羊と鋼の森", "旅をする木"],
+};
 
 const pickStyles = {
   seed: { color: "#3B5232", bg: "#E3EBD9" },
@@ -559,7 +575,7 @@ const pickStyles = {
   author: { color: "#4A4A6E", bg: "#E4E4F0" },
 };
 
-const TODAY_KEY = "k-library-today";
+const TODAY_KEY = "k-library-today-v2";
 
 function todayString() {
   const d = new Date();
@@ -618,8 +634,10 @@ async function chooseTodayPicks() {
   if (seed) add({ kind: "seed", reason: "本のたねから", bookId: seed.id });
 
   // 2〜4は本の情報をさがすので、いっしょに問い合わせる
-  const seasonWord = pickOne(seasonSearch[month], dailyRandom("season-word"));
-  const lovedChoices = lovedBooks.filter((title) => !alreadyHave(title));
+  const levels = readingLevels[currentMember] || readingLevels.all;
+  const level = pickOne(levels, dailyRandom("level"));
+  const seasonWord = `${pickOne(seasonSearch[month], dailyRandom("season-word"))} ${seasonSuffix[level]}`;
+  const lovedChoices = levels.flatMap((key) => lovedBooks[key]).filter((title) => !alreadyHave(title));
   const lovedTitle = pickOne(lovedChoices, dailyRandom("loved"));
   const metWithAuthor = mine.filter((book) => (book.status === "met" || book.status === "home") && book.author);
   const favorites = metWithAuthor.filter((book) => book.favorite);
